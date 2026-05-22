@@ -1,4 +1,4 @@
-// ────── setup ──────────────────────────────────────────────────────────────────────────────────────────┐
+// ────── setup ─────────────────────────────────────────────────────────────────────────────────────────────┐
 
 #ifdef _WIN32
 #include <windows.h>
@@ -16,14 +16,15 @@ using namespace std::filesystem;
 #define reset   "\e[m"
 
 void recurse(path, string = "");
+error_code err;
 
-// ────── main ───────────────────────────────────────────────────────────────────────────────────────────┤
+// ────── main ──────────────────────────────────────────────────────────────────────────────────────────────┤
 
 int main(int, char** argv)
 {
     cout << '\n';
 
-    if (!argv[1] || !is_directory(argv[1])) return cout << red << "⚠ invalid directory\n\n" << reset, 1;
+    if (!argv[1] || !is_directory(argv[1], err)) return cout << red << "⚠ invalid directory\n\n" << reset, 1;
 
     path target = argv[1];
 
@@ -33,25 +34,24 @@ int main(int, char** argv)
     cout << '\n';
 }
 
-// ────── recursion ──────────────────────────────────────────────────────────────────────────────────────┤
+// ────── recursion ─────────────────────────────────────────────────────────────────────────────────────────┤
 
 void recurse(path target, string depth)
 {
-    error_code err;
-    directory_iterator it(target, err), last;
+    directory_iterator it(target, err), end;
 
-    while (it != last)
+    while (it != end)
     {
-        directory_entry entry = *it++;
-        bool end = (it == last);
+        directory_entry entry = *it;
+        bool last = (++it == end);
 
-        string pfx = end ? "└─ " : "├─ ";
-        string ind = end ? "   " : "│  ";
+        string pfx = last ? "└─ " : "├─ ";
+        string ind = last ? "   " : "│  ";
 
         cout << depth << pfx << entry.path().filename().string() << '\n';
 
-        if (is_directory(entry, err) && !entry.is_symlink()) recurse(entry, depth + ind);
+        if (is_directory(entry, err) && !is_symlink(entry)) recurse(entry, depth + ind);
     }
 }
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────┘
+// ──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
